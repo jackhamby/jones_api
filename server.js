@@ -4,12 +4,28 @@ const app = express();
 
 let connection, collection;
 
+app.use(express.json());
+
 app.get('/', (req, res) => {
    res.send('Hello World');
 })
 
-app.post('/stages', (req, res) => {
-
+app.post('/stages', async (req, res) => {
+    let document;
+    console.log(req.body)
+    try {
+        document = req.body;
+    } 
+    catch(e) {
+        console.log(e)
+        res.status(400);
+        res.send("a json body is required");
+        return;
+    }
+    console.log(document)
+    const result = await collection.insertOne(document);
+    console.log(document)
+    res.sendStatus(201);
 })
 
 app.get('/stages', async (req, res) => {
@@ -21,7 +37,6 @@ app.get('/stages', async (req, res) => {
 var server = app.listen(8081, async () => {
    var host = server.address().address;
    var port = server.address().port;
-   
    var url = "mongodb://localhost:27017/jones";
 
    try {
@@ -32,12 +47,14 @@ var server = app.listen(8081, async () => {
      collection = connection
         .db("jones")
         .collection("stages")
+
+    await collection.deleteMany();
    }
    catch(e){
-       console.log(`failed to connect: ${e}`)
+       console.error(`failed to connect: ${e}`)
    }
 
 
 
-   console.log("Example app listening at http://%s:%s", host, port);
+   console.log("listening at http://%s:%s", host, port);
 })
