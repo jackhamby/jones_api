@@ -1,38 +1,63 @@
 const express = require('express');
-const { MongoClient } = require('mongodb'); 
+const cors = require('cors')
 const app = express();
+const { MongoClient } = require('mongodb'); 
+
 
 let connection, collection;
 
-app.use(express.json());
+// TODO: white list calling UI
+// var whitelist = ['http://localhost', 'http://64.227.56.145:3000']
+// var corsOptions = {
+//   origin: function (origin, callback) {
+//     if (whitelist.indexOf(origin) !== -1) {
+//       callback(null, true)
+//     } else {
+//       callback(new Error('Not allowed by CORS'))
+//     }
+//   }
+// }
+const corsOptions = {
+
+}
+
+app.use(express.json(), cors(corsOptions));
 
 app.get('/', (req, res) => {
    res.send('Hello World');
 })
 
 app.post('/stages', async (req, res) => {
-    let document;
-    console.log(req.body)
     try {
-        document = req.body;
-    } 
-    catch(e) {
-        console.log(e)
-        res.status(400);
-        res.send("a json body is required");
+        result = await collection.insertOne(req.body);
+    } catch (e){
+        console.error(`failed to insert stage: ${e}`);
+        res.status(500);
+        res.send('failed to insert');
         return;
     }
-    console.log(document)
-    const result = await collection.insertOne(document);
-    console.log(document)
+
     res.sendStatus(201);
 })
 
 app.get('/stages', async (req, res) => {
-    const results = await collection.find().toArray();
-    console.log(results);
+    let results;
+    let query;
+    if (req.query["name"]){
+        query = { "name" : req.query["name"]}
+    }
+    try{
+        results = await collection.find(query).toArray();
+    } catch(e){
+        console.error(`failed to get stages: ${e}`)
+        res.status(500);
+        res.send('failed to get stages');
+        return;
+    }
     res.send(results);
-})
+});
+
+app.get('/stages')
 
 var server = app.listen(8081, async () => {
    var host = server.address().address;
@@ -49,12 +74,10 @@ var server = app.listen(8081, async () => {
         .collection("stages")
 
     await collection.deleteMany();
+   } catch(e){
+        console.error(`failed to connect: ${e}`)
+        process.exit(1);
    }
-   catch(e){
-       console.error(`failed to connect: ${e}`)
-   }
-
-
 
    console.log("listening at http://%s:%s", host, port);
 })
