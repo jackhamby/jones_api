@@ -44,9 +44,9 @@ app.get('/stages', async (req, res) => {
     let results;
     let query;
     if (req.query["name"]){
-        query = { "name" : req.query["name"]}
+        query = { "name" : {"$regex" : req.query["name"]}}
     }
-    try{
+    try {
         results = await collection.find(query).toArray();
     } catch(e){
         console.error(`failed to get stages: ${e}`)
